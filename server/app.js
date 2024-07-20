@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const { uuid } = require('uuidv4')
 const cors = require('cors')
+require('dotenv').config()
 
 const path = require('path')
 const multer = require('multer')
@@ -22,23 +23,23 @@ const storage = multer.diskStorage({
 })
 
 const fileFilter = (req, file, cb) => {
-  const filetypes = /jpeg|jpg|png|jfif/;
-  const mimetype = filetypes.test(file.mimetype);
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const filetypes = /jpeg|jpg|png|jfif/
+  const mimetype = filetypes.test(file.mimetype)
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase())
 
   if (mimetype && extname) {
-    return cb(null, true);
+    return cb(null, true)
   } else {
-    cb('Error: image is wrong format');
+    cb('Error: image is wrong format')
   }
 }
 
 app.use(bodyParser.json())
-app.use(multer({storage: storage, fileFilter: fileFilter}).single('image'))
+app.use(multer({ storage: storage, fileFilter: fileFilter }).single('image'))
 app.use('/images', express.static(path.join(__dirname, 'images')))
 
-app.options('*', cors());
-app.use(cors());
+app.options('*', cors())
+app.use(cors())
 // app.use((req, res, next) => {
 //   res.setHeader('Access-Control-Allow-Origin', '*')
 //   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PACTH, DELETE')
@@ -56,10 +57,12 @@ app.use((error, req, res, next) => {
 })
 
 mongoose
-  .connect(
-    
-  )
+  .connect(process.env.MONGO_URI)
   .then(result => {
-    app.listen(8080)
+    const server = app.listen(8080)
+    const io = require('./socket').init(server)
+    io.on('connection', socket => {
+      console.log('Client Connected')
+    })
   })
   .catch(err => console.log(err))
